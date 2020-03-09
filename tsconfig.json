@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "es2015",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "typeRoots": [
+      "types"
+    ],
+    "lib": [
+      "ES2015"
+    ],
+    "types": [
+      "node"
+    ]
+
+  }
+}

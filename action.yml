@@ -1,0 +1,30 @@
+name: 'Create Heroku Review App'
+description: 'Create or update Heroku Review/Staging App'
+inputs:
+  app:
+    description: 'Name of app to create / update'
+    required: true
+  env_from:
+    description: 'Name of app to copy envs from'
+    required: true
+  pipeline:
+    description: 'Name of pipeline to create app in'
+    required: true
+  heroku_api_token:
+    description: 'Heroku API Token'
+    required: true
+  app_json:
+    description: 'Path to app.json, default: app.json'
+    required: false
+    default: 'app.json'
+  stage:
+    description: 'Stage to put app in to'
+    required: false
+    default: 'staging'
+  pr_number:
+    description: 'Number of associated PR, if set, will be set as ENV HEROKU_PR_NUMBER'
+    required: false
+
+runs:
+  using: 'node12'
+  main: 'dist/index.js'
