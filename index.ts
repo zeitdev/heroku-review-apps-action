@@ -127,5 +127,6 @@ async function run() {
 
 run().catch((e) => {
   console.error(e);
+  core.setFailed(e.message);
 });
 
