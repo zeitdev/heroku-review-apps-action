@@ -125,8 +125,13 @@ async function run() {
   }
 }
 
-run().catch((e) => {
+try {
+  run().catch((e) => {
+    console.error(e);
+    core.setFailed(e.message);
+  });
+} catch (e) {
   console.error(e);
   core.setFailed(e.message);
-});
+}
 
