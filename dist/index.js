@@ -9433,8 +9433,38 @@ function addEnvs(heroku, sourceApp, targetApp, envs, additional) {
         return yield heroku.patch(`/apps/${targetApp}/config-vars`, { body: targetEnvs });
     });
 }
-function run() {
+function createApp(heroku, appName, sourceApp, pipelineId, pipelineStage, appJson, additionalEnvs) {
     var _a, _b, _c;
+    return __awaiter(this, void 0, void 0, function* () {
+        const newAppRequest = {
+            name: appName,
+            region: (_a = sourceApp.region) === null || _a === void 0 ? void 0 : _a.name,
+            stack: (_b = sourceApp.stack) === null || _b === void 0 ? void 0 : _b.name,
+            team: (_c = sourceApp.team) === null || _c === void 0 ? void 0 : _c.name,
+        };
+        console.log(`Creating new app ${appName}...`);
+        const createPath = newAppRequest.team ? '/teams/apps' : '/apps';
+        const newApp = yield heroku.post(createPath, { body: newAppRequest });
+        console.log('Created App.', newApp.id);
+        try {
+            const pipelineCoupling = {
+                app: appName,
+                pipeline: pipelineId,
+                stage: pipelineStage,
+            };
+            console.log(`Putting ${appName} in pipeline ${pipelineId}, stage ${pipelineStage}...`);
+            yield heroku.post('/pipeline-couplings', { body: pipelineCoupling });
+            yield createAddons(heroku, appName, appJson.addons);
+            yield addEnvs(heroku, sourceApp.name, appName, appJson.env, additionalEnvs);
+        }
+        catch (e) {
+            yield heroku.delete(`/apps/${appName}`);
+            throw e;
+        }
+        return newApp;
+    });
+}
+function run() {
     return __awaiter(this, void 0, void 0, function* () {
         const appName = core.getInput('app');
         const envFrom = core.getInput('env_from');
@@ -9449,30 +9479,11 @@ function run() {
         const apps = yield heroku.get('/apps');
         const sourceApp = apps.find(({ name }) => name === envFrom);
         const existingApp = apps.find(({ name }) => name === appName);
-        console.log(sourceApp);
         if (existingApp) {
             console.log(`App exists: ${existingApp.id}`);
         }
         else if (sourceApp) {
-            const newAppRequest = {
-                name: appName,
-                region: (_a = sourceApp.region) === null || _a === void 0 ? void 0 : _a.name,
-                stack: (_b = sourceApp.stack) === null || _b === void 0 ? void 0 : _b.name,
-                team: (_c = sourceApp.team) === null || _c === void 0 ? void 0 : _c.name,
-            };
-            console.log(`Creating new app ${appName}...`);
-            const createPath = newAppRequest.team ? '/teams/apps' : '/apps';
-            const newApp = yield heroku.post(createPath, { body: newAppRequest });
-            console.log('Created App.', newApp);
-            const pipelineCoupling = {
-                app: appName,
-                pipeline: pipelineId,
-                stage: pipelineStage,
-            };
-            console.log(`Putting ${appName} in pipeline ${pipelineId}, stage ${pipelineStage}...`);
-            yield heroku.post('/pipeline-couplings', { body: pipelineCoupling });
-            yield createAddons(heroku, appName, appJson.addons);
-            yield addEnvs(heroku, envFrom, appName, appJson.env, {
+            const newApp = yield createApp(heroku, appName, sourceApp, pipelineId, pipelineStage, appJson, {
                 HEROKU_PR_NUMBER: prNumber,
                 HEROKU_APP_NAME: appName,
                 HEROKU_BRANCH: herokuBranch,
@@ -9480,9 +9491,16 @@ function run() {
         }
     });
 }
-run().catch((e) => {
+try {
+    run().catch((e) => {
+        console.error(e);
+        core.setFailed(e.message);
+    });
+}
+catch (e) {
     console.error(e);
-});
+    core.setFailed(e.message);
+}
 
 
 /***/ }),

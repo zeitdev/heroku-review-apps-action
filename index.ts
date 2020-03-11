@@ -20,7 +20,6 @@ async function createAddons(heroku: Heroku, targetApp: string, addons: Array<App
     console.log(`Creating addon ${newAddon.plan}...`);
     const response = await heroku.post(`/apps/${targetApp}/addons`, {body: newAddon});
     console.log(response);
-
   }));
 }
 
@@ -77,7 +76,7 @@ async function createApp(
   const newApp = await heroku.post<HerokuPlatformApiApp>(createPath, {body: newAppRequest});
   console.log('Created App.', newApp.id);
 
-  try{
+  try {
     const pipelineCoupling = {
       app: appName,
       pipeline: pipelineId,
